@@ -1,0 +1,14 @@
+{
+  "name": "neuton-apify-mcp-recruiting-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "inspect": "node src/inspect-tools.mjs",
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "@apify/actors-mcp-server": "0.14.2",
+    "@modelcontextprotocol/sdk": "1.30.0"
+  }
+}
