@@ -2,7 +2,7 @@
 
 This is the tested companion project for the Neuton Apify Content Program article. It is intended for developers who are new to Apify but already comfortable with Node.js, JSON, and environment variables.
 
-The companion is a deterministic MCP client, not an autonomous language-model agent. It calls two Actor tools in a fixed order. Its brief reports literal term mentions with source excerpts; it does not infer hiring requirements or make candidate decisions. The original end-to-end run was verified August 9, 2026. The September 29 brief correction passes offline tests but has not been rerun against paid cloud Actors.
+The companion is a deterministic MCP client, not an autonomous language-model agent. It calls two Actor tools in a fixed order. Its brief reports literal term mentions with source excerpts; it does not infer hiring requirements or make candidate decisions. The original end-to-end run was verified August 9, 2026. The September 29 brief correction and September 30 resume support pass offline tests but have not been rerun against paid cloud Actors.
 
 ## Try one job before setting up MCP
 
@@ -52,7 +52,19 @@ The script:
 3. Passes two returned job IDs to the LinkedIn Job Details Actor.
 4. Reads the enriched dataset and writes `run-output.json`.
 
-Successful output includes both run IDs, both dataset IDs, the selected records, and a short evidence-based brief. If a run fails, the script reports the Actor name, run ID, status, and the next action returned by Apify MCP.
+Successful output includes both run IDs, both dataset IDs, the selected records, and a short evidence-based brief. A terminal failure reports its run ID and status, then stops for inspection in Apify Console.
+
+### Resume without launching another paid run
+
+The script records each start in `.neuton-run-checkpoints/` before calling the Actor, then saves the returned run ID. This folder contains run identifiers and an input fingerprint, not your API token or scraped records. Keep it private; it is excluded from Git.
+
+A 30-second MCP wait is not the Actor's execution timeout. This example polls the same run a bounded number of times. If it is still active, `npm start` exits with its run ID instead of treating it as failed or aborting it. Run `npm start` again from the same directory to resume. A completed search is reused when only the details step needs to finish, and a completed workflow reads the same datasets again rather than buying another scrape.
+
+If the connection fails during the initial start before a run ID is saved, the script stops with an ambiguous-start warning. Check **Apify Console > Runs** before doing anything else. Do not delete the checkpoint or retry through a fresh directory: the original run may already be billable. Failed, aborted and timed-out runs also stop rather than restart automatically. A polling connection error preserves the known run ID and can be retried with `npm start`.
+
+For an intentional fresh scrape, first confirm both recorded runs are terminal in Console, preserve their output and archive the checkpoint folder. Only then start a new workflow and review current pricing. Changing inputs while keeping an old checkpoint is rejected. Never run concurrent copies to try to speed it up.
+
+This prevents automatic duplicate starts within the same checkpoint directory. It is not server-side exactly-once execution, a dollar spending cap, or protection if the checkpoint is lost. See [Apify's MCP run and result documentation](https://docs.apify.com/integrations/mcp).
 
 The brief includes `observedTerms` with posting counts, job URLs and excerpts. A mention can be negated or optional; do not treat it as a verified skill requirement. Missing, duplicate, unrelated or incomplete enriched records stop brief generation. Historical fixed sample claims are no longer emitted. Run `npm test` for the offline checks; they make no network requests or paid Actor calls.
 
@@ -70,7 +82,7 @@ The brief includes `observedTerms` with posting counts, job URLs and excerpts. A
 - **No Actor tool appears**: confirm the Actor full name in `src/mcp-client.mjs` and run `npm run inspect`.
 - **Authentication fails**: check that `APIFY_TOKEN` exists in the same shell that runs `npm start`.
 - **The search returns zero rows**: broaden the date window or location, but keep `maxResultsPerQuery` small while testing.
-- **A run remains active after 30 seconds**: use the returned run ID with the MCP `get-actor-run` tool instead of starting another run.
+- **A run remains active**: keep `.neuton-run-checkpoints/` and rerun `npm start` to resume the recorded run. Do not launch the Actor manually as a retry.
 
 ## Safety and cost
 

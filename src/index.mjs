@@ -1,33 +1,9 @@
 import { writeFile } from 'node:fs/promises';
 import { connectToApify, findActorTool } from './mcp-client.mjs';
 import { buildResearchBrief } from './research-brief.mjs';
+import { payloadFrom, runWithCheckpoint } from './run-checkpoint.mjs';
 
-function payloadFrom(result) {
-  if (result.structuredContent) return result.structuredContent;
-
-  const textBlock = result.content?.find((item) => item.type === 'text');
-  if (!textBlock?.text) {
-    throw new Error('The MCP tool returned no structured or text content.');
-  }
-
-  return JSON.parse(textBlock.text);
-}
-
-function requireSuccessfulRun(run, actorName) {
-  if (run.status !== 'SUCCEEDED') {
-    throw new Error(
-      `${actorName} finished with ${run.status}. Run ID: ${run.runId}. ${run.nextStep ?? ''}`,
-    );
-  }
-
-  const datasetId = run.storages?.datasets?.default?.id;
-  if (!datasetId) {
-    throw new Error(`${actorName} succeeded but returned no default dataset ID.`);
-  }
-
-  return datasetId;
-}
-
+const checkpointDir = '.neuton-run-checkpoints';
 const { client, transport } = await connectToApify();
 
 try {
@@ -35,9 +11,10 @@ try {
   const searchTool = findActorTool(tools, 'linkedin-jobs-search-scraper');
   const detailsTool = findActorTool(tools, 'linkedin-job-details-scraper');
 
-  const searchResult = await client.callTool({
-    name: searchTool.name,
-    arguments: {
+  const searchRun = await runWithCheckpoint({
+    client, checkpointDir, step: 'search', toolName: searchTool.name,
+    actorName: 'neuton/linkedin-jobs-search-scraper',
+    input: {
       queries: ['AI engineer'],
       locations: ['Bengaluru'],
       datePosted: 'r604800',
@@ -46,8 +23,7 @@ try {
       waitSecs: 30,
     },
   });
-  const searchRun = payloadFrom(searchResult);
-  const searchDatasetId = requireSuccessfulRun(searchRun, searchTool.title);
+  const searchDatasetId = searchRun.storages.datasets.default.id;
 
   const searchRowsResult = await client.callTool({
     name: 'get-dataset-items',
@@ -66,16 +42,16 @@ try {
     throw new Error('The search succeeded but returned no job IDs to enrich.');
   }
 
-  const detailsResult = await client.callTool({
-    name: detailsTool.name,
-    arguments: {
+  const detailsRun = await runWithCheckpoint({
+    client, checkpointDir, step: 'details', toolName: detailsTool.name,
+    actorName: 'neuton/linkedin-job-details-scraper',
+    input: {
       jobUrlsOrIds: jobIds,
       maxResults: jobIds.length,
       waitSecs: 30,
     },
   });
-  const detailsRun = payloadFrom(detailsResult);
-  const detailsDatasetId = requireSuccessfulRun(detailsRun, detailsTool.title);
+  const detailsDatasetId = detailsRun.storages.datasets.default.id;
 
   const detailRowsResult = await client.callTool({
     name: 'get-dataset-items',
