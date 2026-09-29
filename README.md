@@ -2,6 +2,8 @@
 
 This is the tested companion project for the Neuton Apify Content Program article. It is intended for developers who are new to Apify but already comfortable with Node.js, JSON, and environment variables.
 
+The companion is a deterministic MCP client, not an autonomous language-model agent. It calls two Actor tools in a fixed order. Its brief reports literal term mentions with source excerpts; it does not infer hiring requirements or make candidate decisions. The original end-to-end run was verified August 9, 2026. The September 29 brief correction passes offline tests but has not been rerun against paid cloud Actors.
+
 ## Try one job before setting up MCP
 
 You can check whether the data fits your workflow in Apify Console before installing this project. The [one-job example](https://apify.com/neuton/linkedin-job-details-scraper/examples/sample-linkedin-job-details-scraper-description-extract?utm_source=github&utm_medium=referral&utm_campaign=neuton_mcp_first_job_20260929&utm_content=readme_example) searches for one current public data-engineer role in London. It is a runnable input, not a pre-generated sample dataset or a guaranteed available job.
@@ -51,6 +53,8 @@ The script:
 4. Reads the enriched dataset and writes `run-output.json`.
 
 Successful output includes both run IDs, both dataset IDs, the selected records, and a short evidence-based brief. If a run fails, the script reports the Actor name, run ID, status, and the next action returned by Apify MCP.
+
+The brief includes `observedTerms` with posting counts, job URLs and excerpts. A mention can be negated or optional; do not treat it as a verified skill requirement. Missing, duplicate, unrelated or incomplete enriched records stop brief generation. Historical fixed sample claims are no longer emitted. Run `npm test` for the offline checks; they make no network requests or paid Actor calls.
 
 ## Verified workflow screenshots
 

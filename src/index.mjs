@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { connectToApify, findActorTool } from './mcp-client.mjs';
+import { buildResearchBrief } from './research-brief.mjs';
 
 function payloadFrom(result) {
   if (result.structuredContent) return result.structuredContent;
@@ -58,7 +59,8 @@ try {
     },
   });
   const searchRows = payloadFrom(searchRowsResult).items ?? [];
-  const jobIds = searchRows.slice(0, 2).map((row) => row.jobId).filter(Boolean);
+  const jobIds = [...new Set(searchRows.map((row) => row.jobId)
+    .filter((id) => typeof id === 'string' && /^\d+$/.test(id)))].slice(0, 2);
 
   if (jobIds.length === 0) {
     throw new Error('The search succeeded but returned no job IDs to enrich.');
@@ -82,7 +84,7 @@ try {
       clean: true,
       limit: jobIds.length,
       fields:
-        'jobId,title,company,location,employment_type,seniority_level,description,jobUrl',
+        'jobId,title,company,location,employment_type,seniority_level,description,jobUrl,detailEnriched',
     },
   });
   const detailRows = payloadFrom(detailRowsResult).items ?? [];
@@ -108,16 +110,7 @@ try {
       searchRows,
       detailRows,
     },
-    brief: {
-      observedCompanies: detailRows.map((row) => row.company).filter(Boolean),
-      observedSignals: [
-        'Python appears in both enriched descriptions.',
-        'Both roles mention production AI systems rather than notebook-only prototypes.',
-        'RAG, embeddings, evaluation, monitoring, and guardrails appear in the enriched sample.',
-      ],
-      caveat:
-        'This is a five-result search with two enriched postings. It demonstrates the workflow and does not represent the full Bengaluru market.',
-    },
+    brief: buildResearchBrief(detailRows, jobIds, searchRows.length),
   };
 
   await writeFile('run-output.json', `${JSON.stringify(output, null, 2)}\n`);

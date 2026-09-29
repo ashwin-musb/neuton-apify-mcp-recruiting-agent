@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test src/research-brief.test.mjs",
     "inspect": "node src/inspect-tools.mjs",
     "start": "node src/index.mjs"
   },
