@@ -2,6 +2,18 @@
 
 This is the tested companion project for the Neuton Apify Content Program article. It is intended for developers who are new to Apify but already comfortable with Node.js, JSON, and environment variables.
 
+## Try one job before setting up MCP
+
+You can check whether the data fits your workflow in Apify Console before installing this project. The [one-job example](https://apify.com/neuton/linkedin-job-details-scraper/examples/sample-linkedin-job-details-scraper-description-extract?utm_source=github&utm_medium=referral&utm_campaign=neuton_mcp_first_job_20260929&utm_content=readme_example) searches for one current public data-engineer role in London. It is a runnable input, not a pre-generated sample dataset or a guaranteed available job.
+
+1. Review the [Actor's current pricing](https://apify.com/neuton/linkedin-job-details-scraper?utm_source=github&utm_medium=referral&utm_campaign=neuton_mcp_first_job_20260929&utm_content=readme_actor), account charges and input before starting. Keep `maxResults` at `1`; a result limit is not a dollar spending cap.
+2. After a successful run, open the Dataset and compare the job URL, title, company and description with the public listing. Keep missing optional fields, including salary, empty rather than guessing.
+3. Export JSON or CSV once the row is useful. For recurring spreadsheet work, follow the [LinkedIn jobs to Google Sheets guide](https://neuton.online/guide-linkedin-jobs-google-sheets?utm_source=github&utm_medium=referral&utm_campaign=neuton_mcp_first_job_20260929&utm_content=readme_sheets). Its starter is inactive; Google Sheets delivery must be validated in your own account before scheduling.
+
+If the run fails or returns no complete row, inspect that run's free `RUN_SUMMARY` diagnostics before retrying. A failed fetch does not mean the job was removed. You do not need a LinkedIn login for this public-job workflow; an Apify account is required and charges may apply.
+
+Continue below when you want to connect the two Actors through MCP. This repository does not collect private profiles or rank candidates for employment decisions.
+
 ## Prerequisites
 
 - Node.js 22 or newer.
